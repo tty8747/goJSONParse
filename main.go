@@ -9,18 +9,14 @@ import (
 )
 
 func main() {
-	// curl "https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range/2021-01-01/2021-01-01"   | jq '.'
-	// curl "https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range/2021-01-01/2021-01-01"   | jq '.data[]'
-	// curl "https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range/2021-01-01/2021-01-01"   | jq '.countries[]'
-	// Get and parse data:
-	// link := buildLink()
-	data := getData("https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range/2021-01-17/2021-01-17")
-	c := parseData(data)
-	fmt.Println(c.Scale)
-	fmt.Println("--- Full output:")
-	fmt.Println(c)
+	data := getData("https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range/2021-01-16/2021-01-17")
+
+	// Output list of Countries
+	fmt.Println(getListOfCoutries(data))
+	genListOfDates()
 }
 
+// Template struct
 type jsonBody struct {
 	Scale struct {
 		Deaths struct {
@@ -41,7 +37,7 @@ type jsonBody struct {
 	Countries []string `json:"countries"`
 }
 
-type ParsedJson struct {
+type parsedJson struct {
 	Scale struct {
 		Deaths struct {
 			Min int
@@ -59,18 +55,7 @@ type ParsedJson struct {
 	Countries []string
 }
 
-type Countries struct {
-	// curl "https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range/2021-11-01/2021-11-12" | jq '.countries[]'
-	Countries []string `json:"countries"`
-}
-
-func buildLink() string {
-	var link string = "https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range"
-	tTime := time.Now()
-	fmt.Printf("%s/%s-01-17/%s", link, tTime.Format("2006"), tTime.Format("2006-01-02"))
-	return fmt.Sprintf("%s/%s-01-17/%s", link, tTime.Format("2006"), tTime.Format("2006-01-02"))
-}
-
+// Gets raw data
 func getData(s string) []byte {
 	response, err := http.Get(s)
 	if err != nil {
@@ -85,19 +70,96 @@ func getData(s string) []byte {
 	return body
 }
 
-func parseData(body []byte) ParsedJson {
+// Gets list of countires
+func getListOfCoutries(body []byte) []string {
+
 	var jb jsonBody
-	var pj ParsedJson
+
+	err := json.Unmarshal(body, &jb)
+	if err != nil {
+		panic(err)
+	}
+	return []string(jb.Countries)
+}
+
+func rangeDate(start, end time.Time) func() time.Time {
+	y, m, d := start.Date()
+	start = time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+	y, m, d = end.Date()
+	end = time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+
+	return func() time.Time {
+		if start.After(end) {
+			return time.Time{}
+		}
+		date := start
+		start = start.AddDate(0, 0, 1)
+		return date
+	}
+}
+
+func genListOfDates() {
+	end := time.Now()
+	start, err := time.ParseInLocation("2006-01-02", fmt.Sprintf("%s-%s-%s", end.Format("2006"), "01", "01"), time.Local)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(start.Format("2006-01-02"), "-", end.Format("2006-01-02"))
+
+	for rd := rangeDate(start, end); ; {
+		date := rd()
+		if date.IsZero() {
+			break
+		}
+		fmt.Println(date.Format("2006-01-02"))
+	}
+
+	//	t := time.Now()
+	//	start := fmt.Sprintf("%s-%s-%s", t.Format("2006"), "01", "01")
+	//	now := t.Format("2006-01-02")
+	//	fmt.Printf("%s-%s\n", start, now)
+	//	next, err := time.ParseInLocation("2006-01-02", start, time.Local)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	for i := next; next <= t; i.Add(24 * time.Hour) {
+	//		fmt.Println(next.Add(24 * time.Hour))
+	//	}
+	// t := time.Now()
+	// start, err := time.ParseInLocation("2006-01-02", fmt.Sprintf("%s-%s-%s", t.Format("2006"), "01", "01"), time.Local)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(start.Format("2006-01-02"))
+	// now := t
+	// fmt.Println(now.Format("2006-01-02"))
+	// if start.Before(now) {
+	// 	fmt.Println("Before")
+	// }
+	// if start.After(now) {
+	// 	fmt.Println("After")
+	// }
+	// for i := start; i.Before(now); i.Add(24 * time.Hour) {
+	// 	fmt.Print(i.Format("2006-01-02") + " ")
+	// }
+}
+
+func makeLink() string {
+	var link string = "https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range"
+	t := time.Now()
+	fmt.Printf("%s/%s-01-17/%s", link, t.Format("2006"), t.Format("2006-01-02"))
+	return fmt.Sprintf("%s/%s-01-17/%s", link, t.Format("2006"), t.Format("2006-01-02"))
+}
+
+func parseData(body []byte) parsedJson {
+	var jb jsonBody
+	var pj parsedJson
 	err := json.Unmarshal(body, &jb)
 	if err != nil {
 		panic(err)
 	}
 
-	pj.Countries = jb.Countries
-	// pj.Scale.Deaths = struct {
-	// 	Min int
-	// 	Max int
-	// }(jb.Scale.Deaths)
 	pj.Scale = struct {
 		Deaths struct {
 			Min int
