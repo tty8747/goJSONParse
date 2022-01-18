@@ -27,10 +27,43 @@ func main() {
 	// }
 	// fmt.Println(resultMap)
 
+	var dateID string = "2021-01-16"
+	var countryID string = "GRL"
 	// use jq in Golang
-	op, _ := jq.Parse(".data") // create an Op
-	value, _ := op.Apply(data) // value == '"world"'
-	fmt.Println(string(value)) // go run main.go | jq '.'
+	op, _ := jq.Parse(fmt.Sprintf(".data.%s.%s", dateID, countryID)) // create an Op
+	value, _ := op.Apply(data)                                       // value == '"world"'
+	// fmt.Println(string(value))                                       // go run main.go | jq '.'
+
+	// work with data from jq
+	res, err := getAllData([]byte(value))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(res["confirmed"])
+
+	// collects selected object
+	var obj obj
+	collectData([]byte(value), obj)
+}
+
+// Makes struct for selected object
+type obj struct {
+	DateValue             string  `json:"date_value"`
+	CountryCode           string  `json:"country_code"`
+	Confirmed             int     `json:"confirmed"`
+	Deaths                int     `json:"deaths"`
+	StringencyActual      float64 `json:"stringency_actual"`
+	Stringency            float64 `json:"stringency"`
+	StringencyLegacy      float64 `json:"stringency_legacy"`
+	StringencyLegacy_disp float64 `json:"stringency_legacy_disp"`
+}
+
+func collectData(b []byte, obj obj) {
+	if err := json.Unmarshal(b, &obj); err != nil {
+		panic(err)
+	}
+	fmt.Println(obj)
+	fmt.Println(obj.StringencyLegacy)
 }
 
 // Makes struct for json
