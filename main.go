@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/savaki/jq"
+	_ "github.com/savaki/jq" // go get -u
 )
 
 func main() {
@@ -13,14 +16,21 @@ func main() {
 
 	// Outputs list of Countries
 	// fmt.Println(getListOfCoutries(data))
+
 	// Generate list of dates
 	// genListOfDates()
+
 	// Get all data
-	resultMap, err := getAllData(data)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(resultMap)
+	// resultMap, err := getAllData(data)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(resultMap)
+
+	// use jq in Golang
+	op, _ := jq.Parse(".data") // create an Op
+	value, _ := op.Apply(data) // value == '"world"'
+	fmt.Println(string(value)) // go run main.go | jq '.'
 }
 
 // Makes struct for json
