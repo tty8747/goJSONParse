@@ -12,8 +12,15 @@ func main() {
 	data := getData("https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range/2021-01-16/2021-01-17")
 
 	// Outputs list of Countries
-	fmt.Println(getListOfCoutries(data))
-	genListOfDates()
+	// fmt.Println(getListOfCoutries(data))
+	// Generate list of dates
+	// genListOfDates()
+	// Get all data
+	resultMap, err := getAllData(data)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(resultMap)
 }
 
 // Makes struct for json
@@ -56,6 +63,12 @@ type parsedJson struct {
 		}
 	}
 	Countries []string
+}
+
+// Makes map from json
+func getAllData(body []byte) (m map[string]interface{}, err error) {
+	err = json.Unmarshal(body, &m)
+	return
 }
 
 // Gets raw data
@@ -120,35 +133,6 @@ func genListOfDates() (listOfDates []string) {
 	}
 	fmt.Println(listOfDates)
 	return listOfDates
-
-	//	t := time.Now()
-	//	start := fmt.Sprintf("%s-%s-%s", t.Format("2006"), "01", "01")
-	//	now := t.Format("2006-01-02")
-	//	fmt.Printf("%s-%s\n", start, now)
-	//	next, err := time.ParseInLocation("2006-01-02", start, time.Local)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	for i := next; next <= t; i.Add(24 * time.Hour) {
-	//		fmt.Println(next.Add(24 * time.Hour))
-	//	}
-	// t := time.Now()
-	// start, err := time.ParseInLocation("2006-01-02", fmt.Sprintf("%s-%s-%s", t.Format("2006"), "01", "01"), time.Local)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println(start.Format("2006-01-02"))
-	// now := t
-	// fmt.Println(now.Format("2006-01-02"))
-	// if start.Before(now) {
-	// 	fmt.Println("Before")
-	// }
-	// if start.After(now) {
-	// 	fmt.Println("After")
-	// }
-	// for i := start; i.Before(now); i.Add(24 * time.Hour) {
-	// 	fmt.Print(i.Format("2006-01-02") + " ")
-	// }
 }
 
 func makeLink() string {
