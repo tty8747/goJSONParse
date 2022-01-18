@@ -11,12 +11,12 @@ import (
 func main() {
 	data := getData("https://covidtrackerapi.bsg.ox.ac.uk/api/v2/stringency/date-range/2021-01-16/2021-01-17")
 
-	// Output list of Countries
+	// Outputs list of Countries
 	fmt.Println(getListOfCoutries(data))
 	genListOfDates()
 }
 
-// Template struct
+// Makes struct for json
 type jsonBody struct {
 	Scale struct {
 		Deaths struct {
@@ -35,8 +35,11 @@ type jsonBody struct {
 		} `json:"stringency"`
 	} `json:"scale"`
 	Countries []string `json:"countries"`
+	Data      struct {
+	} `json:"2021-01-16"`
 }
 
+// Makes endpoint struct
 type parsedJson struct {
 	Scale struct {
 		Deaths struct {
@@ -82,6 +85,7 @@ func getListOfCoutries(body []byte) []string {
 	return []string(jb.Countries)
 }
 
+// Gets list of dates
 func rangeDate(start, end time.Time) func() time.Time {
 	y, m, d := start.Date()
 	start = time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
@@ -98,22 +102,24 @@ func rangeDate(start, end time.Time) func() time.Time {
 	}
 }
 
-func genListOfDates() {
+// Gets list of dates
+func genListOfDates() (listOfDates []string) {
 	end := time.Now()
 	start, err := time.ParseInLocation("2006-01-02", fmt.Sprintf("%s-%s-%s", end.Format("2006"), "01", "01"), time.Local)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(start.Format("2006-01-02"), "-", end.Format("2006-01-02"))
-
 	for rd := rangeDate(start, end); ; {
 		date := rd()
 		if date.IsZero() {
 			break
 		}
-		fmt.Println(date.Format("2006-01-02"))
+		// fmt.Println(date.Format("2006-01-02"))
+		listOfDates = append(listOfDates, date.Format("2006-01-02"))
 	}
+	fmt.Println(listOfDates)
+	return listOfDates
 
 	//	t := time.Now()
 	//	start := fmt.Sprintf("%s-%s-%s", t.Format("2006"), "01", "01")
